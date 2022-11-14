@@ -1,0 +1,183 @@
+// ==UserScript==
+// @name         GeoGuessr FR
+// @version      1.0
+// @description  Script proposé par GeoGuessr FR (https://discord.gg/NtvKMPxuer)
+// @author       Ice-Dodo
+// @match        *://*.geoguessr.com/*
+// @icon         https://zupimages.net/up/22/45/39p8.png
+// @grant        none
+// @run-at document-end
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    const more_menus = '<li class="menu_menuItem__Cn2wB"><div class="menu_menuItemLabel__MQkhr"><div class="label_sizeXSmall__mFnrR"><a href="https://discord.gg/NtvKMPxuer" target="_BLANK">Discord FR</a></div></div></li>' +
+    '<li class="menu_menuItem__Cn2wB"><div class="menu_menuItemLabel__MQkhr"><div class="label_sizeXSmall__mFnrR"><a href="https://geofrenchtips.fr/" target="_BLANK">GeoFrenchTips</a></div></div></li>' +
+    '<li class="menu_menuItem__Cn2wB"><div class="menu_menuItemLabel__MQkhr"><div class="label_sizeXSmall__mFnrR"><a href="https://landconquest.fr/" target="_BLANK">Land Conquest</a></div></div></li>' +
+    '<li class="menu_menuItem__Cn2wB"><div class="menu_menuItemLabel__MQkhr"><div class="label_sizeXSmall__mFnrR"><a href="/parties/0c42ffca-b296-472a-a06c-38b159941edb">Party GGFR</a></div></div></li>';
+    const elementNav = document.querySelector("nav[class^=menu_menu__]");
+    var initialNav = "";
+
+    const more_cards = '<a class="quick-links_linkCard__jYQFV" href="/ggfr_maps"><div class="card_card__kHF2y card_shadowMedium__oOfzM card_popOnHover__R6GKv"><div class="card_content__VLeBq"><div class="quick-links_linkCardContent__nr3gK"><img class="quick-links_icon__sBoko" src="https://zupimages.net/up/22/45/c72u.png"><div class="label_sizeXSmall__mFnrR label_italic__CuofN">Maps GeoGuessr FR</div></div></div></div></a>';
+    const elementCards = document.querySelector("div[class^=quick-links_linkCards__]");
+    var initialCards = "";
+
+    function display(){
+        const elementNav = document.querySelector("nav[class^=menu_menu__]");
+        const elementCards = document.querySelector("div[class^=quick-links_linkCards__]");
+
+        const parentNav = document.querySelector("ol[class^=menu_menuItems__]");
+        if(elementNav != null){
+            if(typeof parentNav != "undefined" && parentNav.innerHTML != initialNav + more_menus){
+                if(initialNav == ""){
+                    initialNav = parentNav.innerHTML;
+                }
+                parentNav.innerHTML = initialNav + more_menus;
+            }
+        }
+
+        if(elementCards != null){
+            if(typeof elementCards != "undefined" && elementCards.innerHTML != initialCards + more_cards){
+                if(initialCards == ""){
+                    initialCards = elementCards.innerHTML;
+                }
+                elementCards.innerHTML = initialCards + more_cards;
+            }
+        }
+
+        function simple(chain){
+            chain = chain.toLowerCase();
+            chain = chain.replaceAll('é', 'e');
+            chain = chain.replaceAll('è', 'e');
+            chain = chain.replaceAll('ê', 'e');
+            chain = chain.replaceAll('ë', 'e');
+            chain = chain.replaceAll('ê', 'e');
+            chain = chain.replaceAll('à', 'a');
+            chain = chain.replaceAll('ã', 'a');
+            chain = chain.replaceAll('â', 'a');
+            chain = chain.replaceAll('ô', 'o');
+            chain = chain.replaceAll('õ', 'o');
+            chain = chain.replaceAll('-', '');
+            chain = chain.replaceAll("'", '');
+            chain = chain.replaceAll(' ', '');
+            chain = chain.replaceAll('ï', 'i');
+            chain = chain.replaceAll('î', 'i');
+            chain = chain.replaceAll('ç', 'c');
+            chain = chain.replaceAll('å', 'a');
+            return chain;
+        }
+
+        function findMsg(chain, chain2){
+            if(simple(chain2).indexOf(simple(chain)) >= 0){
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+        function search(){
+            var childs = document.querySelector("div[class^=maps_ggfr]").childNodes;
+            var txt = document.querySelector("input[name^=map_name]").value;
+            var txt2 = document.querySelector("input[name^=map_author]").value;
+            for(let e of childs){
+                if(e.localName != "input"){
+                    if(txt == "" && txt2 == ""){
+                        e.style.height = "";
+                        e.style.opacity = "100";
+                        e.style.padding = "30px";
+                        e.style.position = "relative";
+                    }
+                    if(!findMsg(txt, e.childNodes[1].textContent)){
+                        e.style.height = "0";
+                        e.style.opacity = "0";
+                        e.style.padding = "0";
+                        e.style.position = "absolute";
+                    }else if(!findMsg(txt2, e.childNodes[2].textContent.replace("Created by ", ""))){
+                        e.style.height = "0";
+                        e.style.opacity = "0";
+                        e.style.padding = "0";
+                        e.style.position = "absolute";
+                    }else{
+                        e.style.height = "";
+                        e.style.opacity = "100";
+                        e.style.padding = "30px";
+                        e.style.position = "relative";
+                    }
+                }
+            }
+        }
+
+        if(window.location.href.endsWith("ggfr_maps")){
+            var e = document.querySelector("div[class^=_error_errorPage__]");
+            if(e != null){
+                e.remove();
+                var parent = document.querySelector("main[class^=version3_main__]");
+                parent.style.textAlign = "center";
+                var newParent = document.createElement("div");
+                parent.append(newParent);
+                newParent.className = "maps_ggfr";
+                newParent.style.width = "50%";
+                newParent.style.margin = "auto";
+                fetch("https://www.geoguessr.com/api/v4/parties/0c42ffca-b296-472a-a06c-38b159941edb/leaderboard?period=alltime&count=200&paginateFrom=0").then((r) => r.text()).then((text) => {
+                    var json = JSON.parse(text);
+                    for(let i = 0; i < json.entries.length; i++){
+                        fetch("https://www.geoguessr.com/api/maps?createdBy="+json.entries[i].user.id+"&page=0&count=200").then((r2) => r2.text()).then((text2) => {
+                            var json2 = JSON.parse(text2);
+                            if(json2.length > 0){
+                                for(let j = 0; j < json2.length; j++){
+                                    var row = document.createElement("a");
+                                    newParent.append(row);
+                                    row.href = "https://www.geoguessr.com/"+json2[j].url;
+                                    row.className = "row_ggfr_"+i+"_"+j;
+                                    row.style.display = "flex";
+                                    row.style.textAlign = "center";
+                                    row.style.padding = "30px";
+                                    row.style.borderTop = "2px #484858 solid";
+                                    row.style.textDecoration = "none";
+                                    row.style.transition = "300ms";
+                                    row.onmouseover = () => {document.querySelector("a[class^=row_ggfr_"+i+"_"+j+"]").style.background = "rgba(255, 255, 255, 0.1)";}
+                                    row.onmouseout = () => {document.querySelector("a[class^=row_ggfr_"+i+"_"+j+"]").style.background = "";}
+                                    row.innerHTML = '<img src="https://www.geoguessr.com/images/auto/48/48/ce/0/plain/'+json.entries[i].user.avatarUrl+'" style="border-radius: 500px; width: 50px; height: 50px;"><div class="ggfr_infos" style="margin: auto; margin-left: 5%; text-align: left;"><p class="title_ggfr" style="color: #fff; font-weight: bold; font-size: 1.2em; max-width: 80%;">'+json2[j].name+'</p><p class="ggfr_desc" style="color: #888888; font-weight: bold; font-size: 0.8em; max-width: 80%;">'+json2[j].description+'</p></div><p class="author_ggfr" style="color: #fff; margin: auto; margin-right: 2%;">Created by '+json.entries[i].user.name+'</p>';
+                                }
+                            }
+                        })
+                    }
+                    var input1 = document.createElement("input");
+                    var input2 = document.createElement("input");
+                    newParent.prepend(input2);
+                    newParent.prepend(input1);
+                    input1.type = "text";
+                    input1.name = "map_name";
+                    input1.placeholder = "Map name / description";
+                    input1.style.background = "#1C1B2F";
+                    input1.style.color = "#fff";
+                    input1.style.border = "#484858 1px solid";
+                    input1.style.borderBottom = "none";
+                    input1.style.borderRadius = "0.5rem";
+                    input1.style.borderBottomRightRadius = "0";
+                    input1.style.width = "30%";
+                    input1.addEventListener('keyup', search, false);
+
+                    input2.type = "text";
+                    input2.name = "map_author";
+                    input2.placeholder = "Map author";
+                    input2.style.background = "#1C1B2F";
+                    input2.style.color = "#fff";
+                    input2.style.border = "#484858 1px solid";
+                    input2.style.borderBottom = "none";
+                    input2.style.borderRadius = "0.5rem";
+                    input2.style.borderBottomLeftRadius = "0";
+                    input2.style.width = "30%";
+                    input2.addEventListener('keyup', search, false);
+                })
+            }
+        }
+    }
+
+    const OBSERVER = new MutationObserver((mutations, observer) => {
+        display();
+    });
+
+    OBSERVER.observe(document.body, { attributes: true, childList: true, subtree: true });
+})();
